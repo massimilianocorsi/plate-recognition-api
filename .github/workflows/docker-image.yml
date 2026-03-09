@@ -1,0 +1,32 @@
+
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "bj" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        config-inline: |
+          [registry."registry.massimilianocorsi.it:32000"]
+            http = true
+            insecure = true
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          registry.massimilianocorsi.it:32000/plate-recognition-api:latest
+          registry.massimilianocorsi.it:32000/plate-recognition-api:${{ github.sha }}
