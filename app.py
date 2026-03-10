@@ -4,7 +4,7 @@ import os
 
 API_KEY = os.getenv("PLATE_API_KEY")
 API_URL = os.getenv("PLATE_API_URL")
-REGIONS = os.getenv("REGIONS")
+REGION = os.getenv("PLATE_REGION")
 
 app = Flask(__name__)
 
@@ -22,7 +22,7 @@ def recognize():
         resp = requests.post(
             API_URL,
             files={"upload": file},
-            data={"regions": "it"},
+            data={"regions": "{REGION}"},
             headers={"Authorization": f"Token {API_KEY}"}
         )
         data = resp.json()
