@@ -22,7 +22,7 @@ def recognize():
         resp = requests.post(
             API_URL,
             files={"upload": file},
-            data={"regions": "{REGION}"},
+            data={"regions": REGION},
             headers={"Authorization": f"Token {API_KEY}"}
         )
         data = resp.json()
