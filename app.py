@@ -3,7 +3,8 @@ import requests
 import os
 
 API_KEY = os.getenv("PLATE_API_KEY")
-API_URL = "https://api.platerecognizer.com/v1/plate-reader/"
+API_URL = os.getenv("PLATE_API_URL")
+REGIONS = os.getenv("REGIONS")
 
 app = Flask(__name__)
 
@@ -21,6 +22,7 @@ def recognize():
         resp = requests.post(
             API_URL,
             files={"upload": file},
+            data={"regions": "it"},
             headers={"Authorization": f"Token {API_KEY}"}
         )
         data = resp.json()
