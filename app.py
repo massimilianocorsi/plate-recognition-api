@@ -4,7 +4,7 @@ import os
 
 API_KEY = os.getenv("PLATE_API_KEY")
 API_URL = os.getenv("PLATE_API_URL")
-REGION = os.getenv("PLATE_REGION")
+REGION = os.getenv("PLATE_REGION", "it")  # default IT
 
 app = Flask(__name__)
 
@@ -21,13 +21,14 @@ def recognize():
     try:
         resp = requests.post(
             API_URL,
-            files={"upload": file},
-            data={"regions": REGION},
+            files={"upload": file},     # <── Campo corretto per PlateRecognizer
+            data={"regions": REGION},   # <── Regione italiana corretta
             headers={"Authorization": f"Token {API_KEY}"}
         )
+
         data = resp.json()
 
-        # Normalize plate
+        # Extract and normalize plate
         plate = None
         if "results" in data and len(data["results"]) > 0:
             plate = data["results"][0].get("plate", "").upper()
@@ -36,6 +37,7 @@ def recognize():
         return jsonify({
             "raw": data,
             "plate": plate,
+            "region_used": REGION,
             "field_used": file_key
         })
 
