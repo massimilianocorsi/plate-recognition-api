@@ -3,16 +3,19 @@ import requests
 import os
 
 API_KEY = os.getenv("PLATE_API_KEY")
-API_URL = os.getenv("https://api.platerecognizer.com/v1/plate-reader/")
+API_URL = "https://api.platerecognizer.com/v1/plate-reader/"
 
 app = Flask(__name__)
 
 @app.route("/recognize", methods=["POST"])
 def recognize():
-    if "image" not in request.files:
-        return jsonify({"error": "No image provided"}), 400
+    # Accept ANY file field name
+    if len(request.files) == 0:
+        return jsonify({"error": "No file uploaded"}), 400
 
-    file = request.files["image"]
+    # Take the first file in the request
+    file_key = next(iter(request.files))
+    file = request.files[file_key]
 
     try:
         resp = requests.post(
@@ -22,7 +25,7 @@ def recognize():
         )
         data = resp.json()
 
-        # Normalizzazione targa
+        # Normalize plate
         plate = None
         if "results" in data and len(data["results"]) > 0:
             plate = data["results"][0].get("plate", "").upper()
@@ -30,7 +33,8 @@ def recognize():
 
         return jsonify({
             "raw": data,
-            "plate": plate
+            "plate": plate,
+            "field_used": file_key
         })
 
     except Exception as e:
@@ -39,4 +43,3 @@ def recognize():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=7000)
-
