@@ -1,2 +1,5 @@
-Flask
+flask
+ultralytics
+Pillow
+redis
 requests
