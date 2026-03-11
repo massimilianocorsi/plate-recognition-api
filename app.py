@@ -1,45 +1,85 @@
 from flask import Flask, request, jsonify
-import requests
-import os
+from PIL import Image
 
-API_KEY = os.getenv("PLATE_API_KEY")
-API_URL = os.getenv("PLATE_API_URL")
-REGION = os.getenv("PLATE_REGION", "it")  # default IT
+from yolo_plate import detect_plate
+from yolo_car import detect_car_make_model
+from direction import classify_plate_type, get_direction
+from dedupe import make_fingerprint, is_duplicate
+from utils import compress_image, is_valid_italian_plate
+from ocr import call_ocr
 
 app = Flask(__name__)
 
 @app.route("/recognize", methods=["POST"])
 def recognize():
-    # Accept ANY file field name
     if len(request.files) == 0:
-        return jsonify({"error": "No file uploaded"}), 400
+        return jsonify({"error": "no_file"}), 400
 
-    # Take the first file in the request
+    camera_id = request.args.get("camera", "unknown")
     file_key = next(iter(request.files))
     file = request.files[file_key]
 
     try:
-        resp = requests.post(
-            API_URL,
-            files={"upload": file},     # <── Campo corretto per PlateRecognizer
-            data={"regions": REGION},   # <── Regione italiana corretta
-            headers={"Authorization": f"Token {API_KEY}"}
-        )
+        image = Image.open(file.stream).convert("RGB")
 
-        data = resp.json()
+        # 1) Plate detection with YOLO
+        box = detect_plate(image)
+        if not box:
+            return jsonify({"error": "no_plate_detected"}), 404
 
-        # Extract and normalize plate
-        plate = None
-        if "results" in data and len(data["results"]) > 0:
-            plate = data["results"][0].get("plate", "").upper()
-            plate = "".join(c for c in plate if c.isalnum())
+        x1, y1, x2, y2 = box
+
+        # 2) Duplicate suppression (Redis)
+        fingerprint = make_fingerprint(x1, y1, x2, y2, camera_id)
+        if is_duplicate(fingerprint):
+            return jsonify({
+                "status": "ignored_duplicate",
+                "camera": camera_id
+            }), 200
+
+        # 3) Plate type and direction
+        plate_type, ratio = classify_plate_type(x1, y1, x2, y2)
+        direction = get_direction(plate_type)
+
+        # 4) Crop plate and compress
+        cropped_plate = image.crop((x1, y1, x2, y2))
+        compressed_bytes = compress_image(cropped_plate)
+
+        # 5) Exit: no OCR, no car model
+        if direction == "egress":
+            return jsonify({
+                "direction": direction,
+                "plate": None,
+                "plate_valid": False,
+                "plate_type": plate_type,
+                "ratio": ratio,
+                "ocr_called": False,
+                "car_make": None,
+                "car_model": None,
+                "car_confidence": None,
+                "camera": camera_id
+            }), 200
+
+        # 6) Entry: car make/model on full frame
+        car_make, car_model, car_conf = detect_car_make_model(image)
+
+        # 7) Entry: OCR on plate crop
+        plate, raw_ocr = call_ocr(compressed_bytes)
+        plate_valid = is_valid_italian_plate(plate) if plate else False
 
         return jsonify({
-            "raw": data,
+            "direction": direction,
             "plate": plate,
-            "region_used": REGION,
-            "field_used": file_key
-        })
+            "plate_valid": plate_valid,
+            "plate_type": plate_type,
+            "ratio": ratio,
+            "ocr_called": True,
+            "car_make": car_make,
+            "car_model": car_model,
+            "car_confidence": car_conf,
+            "camera": camera_id,
+            "ocr_raw": raw_ocr
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
