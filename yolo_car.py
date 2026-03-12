@@ -1,4 +1,3 @@
-# detect_car.py
 import logging
 import onnxruntime as ort
 import numpy as np
@@ -6,7 +5,6 @@ from PIL import Image
 from config import YOLO_CAR_MODEL
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
 def preprocess_image(image: Image.Image, img_size=640):
     image = image.convert("RGB").resize((img_size, img_size))
@@ -17,6 +15,21 @@ def preprocess_image(image: Image.Image, img_size=640):
     return img_np
 
 session_car = ort.InferenceSession(YOLO_CAR_MODEL)
+
+# Carica le classi se esiste il file, altrimenti usa l'indice come stringa
+try:
+    from config import YOLO_CAR_CLASSES
+    with open(YOLO_CAR_CLASSES, "r") as f:
+        CLASS_NAMES = [line.strip() for line in f.readlines()]
+    logger.info("Caricate %d classi da %s", len(CLASS_NAMES), YOLO_CAR_CLASSES)
+except Exception:
+    CLASS_NAMES = None
+    logger.warning("Nessun file classi trovato, uso indice numerico")
+
+def get_class_name(cls_id: int) -> str:
+    if CLASS_NAMES and cls_id < len(CLASS_NAMES):
+        return CLASS_NAMES[cls_id]
+    return str(cls_id)
 
 def detect_car_make_model(image: Image.Image):
     try:
@@ -62,10 +75,21 @@ def detect_car_make_model(image: Image.Image):
 
         cls_id = int(filtered_class_ids[best_idx])
         conf   = float(filtered_confidences[best_idx])
-        box    = filtered_output[best_idx][:4].tolist()
 
-        logger.debug("risultato → cls_id=%d, conf=%.3f, box=%s", cls_id, conf, box)
-        return cls_id, conf, box
+        # Parsing marca/modello dal nome classe (es. "Toyota_Corolla" → make=Toyota, model=Corolla)
+        class_name = get_class_name(cls_id)
+        logger.debug("class_name: %s", class_name)
+
+        if "_" in class_name:
+            parts = class_name.split("_", 1)
+            car_make  = parts[0]
+            car_model = parts[1]
+        else:
+            car_make  = class_name
+            car_model = None
+
+        logger.debug("risultato → make=%s model=%s conf=%.3f", car_make, car_model, conf)
+        return car_make, car_model, conf
 
     except Exception as e:
         logger.exception("Errore in detect_car_make_model: %s", e)

@@ -71,6 +71,7 @@ def recognize():
 
         # 6) Entry: car make/model on full frame
         car_make, car_model, car_conf = detect_car_make_model(image)
+        
         app.logger.debug("car: make=%s model=%s conf=%s", car_make, car_model, car_conf)
 
         # 7) Entry: OCR on plate crop
