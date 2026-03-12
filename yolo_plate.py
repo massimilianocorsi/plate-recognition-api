@@ -22,7 +22,12 @@ def detect_plate(image: Image.Image):
     input_tensor = preprocess_image(image)
     input_name = session_plate.get_inputs()[0].name
     outputs = session_plate.run(None, {input_name: input_tensor})
-    # Post-processing da adattare in base all'output del tuo modello ONNX
-    # Qui va implementata la logica per estrarre le box come faceva YOLO
-    # ...
-    return outputs
+    # Post-processing YOLOv8 ONNX: estrai le box
+    # Assumiamo che outputs[0] sia (N, 6): x1, y1, x2, y2, conf, class
+    boxes = outputs[0]
+    if boxes.shape[0] == 0:
+        return None
+    # Scegli la box più grande
+    box = max(boxes, key=lambda b: (b[2] - b[0]) * (b[3] - b[1]))
+    x1, y1, x2, y2 = map(int, box[:4])
+    return x1, y1, x2, y2
