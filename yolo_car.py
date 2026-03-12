@@ -18,14 +18,26 @@ def detect_car_make_model(image: Image.Image):
     input_tensor = preprocess_image(image)
     input_name = session_car.get_inputs()[0].name
     outputs = session_car.run(None, {input_name: input_tensor})
-    # Post-processing YOLOv8 ONNX: estrai le box
-    # Assumiamo che outputs[0] sia (N, 6): x1, y1, x2, y2, conf, class
-    boxes = outputs[0]
-    if boxes.shape[0] == 0:
+    
+    # 1. Rimuovi la dimensione batch e trasponi: da [1, 84, 8400] a [8400, 84]
+    output = np.squeeze(outputs[0]).T
+    
+    # 2. Trova la confidenza massima per ogni riga (dopo l'indice 4 iniziano i punteggi delle classi)
+    scores = output[:, 4:]
+    class_ids = np.argmax(scores, axis=1)
+    confidences = np.max(scores, axis=1)
+    
+    # 3. Filtra per una soglia minima (es. 0.25)
+    mask = confidences > 0.25
+    if not np.any(mask):
         return None, None, None
-    # Scegli la box con confidenza massima
-    box = max(boxes, key=lambda b: float(b[4]))
-    cls_id = int(box[5].item()) if np.isscalar(box[5]) or box[5].shape == () else int(box[5][0].item())
-    conf = float(box[4].item()) if np.isscalar(box[4]) or box[4].shape == () else float(box[4][0].item())
-    # label = ... (da implementare se hai la lista delle classi)
-    return cls_id, conf, box[:4]
+        
+    # 4. Prendi il migliore
+    best_idx = np.argmax(confidences[mask])
+    
+    # Estrai i valori usando indici scalari sicuri
+    cls_id = int(class_ids[mask][best_idx])
+    conf = float(confidences[mask][best_idx])
+    box = output[mask][best_idx][:4] # [x_center, y_center, width, height]
+    
+    return cls_id, conf, box
