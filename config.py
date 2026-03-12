@@ -10,5 +10,5 @@ REDIS_DB = int(os.getenv("REDIS_DB", "0"))
 
 CACHE_TTL = int(os.getenv("CACHE_TTL", "5"))
 
-YOLO_PLATE_MODEL = "yolov8n.onnx"
+YOLO_PLATE_MODEL = "yolov8n_it_plate.onnx"
 YOLO_CAR_MODEL = "yolov8n_car_model.onnx"
