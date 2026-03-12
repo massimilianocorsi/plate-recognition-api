@@ -1,5 +1,7 @@
 flask
-ultralytics
+onnxruntime
+numpy
 Pillow
+opencv-python
 redis
 requests
