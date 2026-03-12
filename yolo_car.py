@@ -1,4 +1,3 @@
-# Cambiato: utilizzo ONNX invece di ultralytics YOLO
 import onnxruntime as ort
 import numpy as np
 from PIL import Image
@@ -22,22 +21,26 @@ def detect_car_make_model(image: Image.Image):
     # 1. Rimuovi la dimensione batch e trasponi: da [1, 84, 8400] a [8400, 84]
     output = np.squeeze(outputs[0]).T
     
-    # 2. Trova la confidenza massima per ogni riga (dopo l'indice 4 iniziano i punteggi delle classi)
+    # 2. Calcola scores e class_ids
     scores = output[:, 4:]
     class_ids = np.argmax(scores, axis=1)
     confidences = np.max(scores, axis=1)
     
-    # 3. Filtra per una soglia minima (es. 0.25)
+    # 3. Filtra per soglia minima
     mask = confidences > 0.25
     if not np.any(mask):
         return None, None, None
-        
-    # 4. Prendi il migliore
-    best_idx = np.argmax(confidences[mask])
     
-    # Estrai i valori usando indici scalari sicuri
-    cls_id = int(class_ids[mask][best_idx])
-    conf = float(confidences[mask][best_idx])
-    box = output[mask][best_idx][:4] # [x_center, y_center, width, height]
+    # 4. Lavora direttamente sugli array filtrati
+    filtered_output = output[mask]
+    filtered_confidences = confidences[mask]
+    filtered_class_ids = class_ids[mask]
+    
+    # 5. Trova l'indice del best score nell'array filtrato
+    best_idx = int(np.argmax(filtered_confidences))  # scalare sicuro
+    
+    cls_id = int(filtered_class_ids[best_idx])
+    conf = float(filtered_confidences[best_idx])
+    box = filtered_output[best_idx][:4]  # [x_center, y_center, width, height]
     
     return cls_id, conf, box
