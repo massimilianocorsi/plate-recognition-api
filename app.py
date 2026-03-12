@@ -8,6 +8,12 @@ from dedupe import make_fingerprint, is_duplicate
 from utils import compress_image, is_valid_italian_plate
 from ocr import call_ocr
 
+import logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+)
+
 app = Flask(__name__)
 
 @app.route("/recognize", methods=["POST"])
