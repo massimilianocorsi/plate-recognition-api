@@ -29,5 +29,8 @@ def detect_plate(image: Image.Image):
         return None
     # Scegli la box più grande
     box = max(boxes, key=lambda b: (b[2] - b[0]) * (b[3] - b[1]))
-    x1, y1, x2, y2 = map(int, box[:4])
+    x1 = int(box[0].item())
+    y1 = int(box[1].item())
+    x2 = int(box[2].item())
+    y2 = int(box[3].item())
     return x1, y1, x2, y2
