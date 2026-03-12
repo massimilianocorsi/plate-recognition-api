@@ -15,5 +15,24 @@ session_plate = ort.InferenceSession(YOLO_PLATE_MODEL)
 
 def detect_plate(image: Image.Image):
     orig_w, orig_h = image.size
-    # Temporaneo: usa tutta l'immagine come area di detection
+
+    input_tensor = preprocess_image(image)
+    input_name = session_plate.get_inputs()[0].name
+    outputs = session_plate.run(None, {input_name: input_tensor})
+
+    raw = outputs[0]
+    squeezed = np.squeeze(raw)
+    boxes = squeezed.T if squeezed.shape[0] < squeezed.shape[1] else squeezed
+
+    confidences = np.max(boxes[:, 4:], axis=1)
+
+    try:
+        from flask import current_app
+        current_app.logger.debug("plate model - max conf: %.4f", float(np.max(confidences)))
+        current_app.logger.debug("plate model - top5 conf: %s", np.sort(confidences)[::-1][:5].tolist())
+        current_app.logger.debug("plate model - box con max conf: %s", boxes[int(np.argmax(confidences))][:6].tolist())
+    except:
+        pass
+
+    # Temporaneo: tutta l'immagine
     return 0, 0, orig_w, orig_h
