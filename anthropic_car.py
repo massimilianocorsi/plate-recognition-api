@@ -19,16 +19,16 @@ def detect_car_make_model_anthropic(image: Image.Image):
     image_b64 = base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
 
     prompt = (
-        "Look at this image. Identify the car brand (make) and model visible in the photo. "
-        "Reply ONLY with a JSON object with two keys: \"make\" and \"model\". "
+        "Look at this image. Identify plate number and the car brand (make) and model visible in the photo. "
+        "Reply ONLY with a JSON object with two keys: \"plate\" and \"make\" and \"model\". "
         "If you cannot determine one or both, use null for that field. "
-        "Example: {\"make\": \"Toyota\", \"model\": \"Corolla\"}"
+        "Example: {\"plate\": \"AZ705RT\",\"make\": \"Toyota\", \"model\": \"Corolla\"}"
     )
 
     logger.debug("Invio immagine ad Anthropic per riconoscimento auto")
 
     message = _client.messages.create(
-        model="claude-opus-4-5",
+        model="claude-3-5-haiku-20241022",
         max_tokens=100,
         messages=[
             {
