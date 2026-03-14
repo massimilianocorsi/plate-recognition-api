@@ -72,9 +72,9 @@ def recognize():
 
         # 6) Entry: car make/model on full frame
         # car_make, car_model, car_conf = detect_car_make_model(image)  # YOLO disabilitato
-        car_make, car_model, car_conf = detect_car_make_model_anthropic(image)
+        car_make, car_model, anthropic_plate, car_conf = detect_car_make_model_anthropic(image)
 
-        app.logger.debug("car: make=%s model=%s conf=%s", car_make, car_model, car_conf)
+        app.logger.debug("car: make=%s model=%s anthropic_plate=%s conf=%s", car_make, car_model, anthropic_plate, car_conf)
 
         # 7) Entry: OCR on plate crop
         plate, raw_ocr = call_ocr(compressed_bytes)
@@ -85,6 +85,7 @@ def recognize():
             "direction": direction,
             "plate": plate,
             "plate_valid": plate_valid,
+            "plate_anthropic": anthropic_plate,
             "plate_type": plate_type,
             "ratio": ratio,
             "ocr_called": True,
