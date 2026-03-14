@@ -2,7 +2,8 @@ from flask import Flask, request, jsonify
 from PIL import Image
 
 from yolo_plate import detect_plate
-from yolo_car import detect_car_make_model
+# from yolo_car import detect_car_make_model  # disabilitato: sostituito da Anthropic
+from anthropic_car import detect_car_make_model_anthropic
 from direction import classify_plate_type, get_direction
 from dedupe import make_fingerprint, is_duplicate
 from utils import compress_image, is_valid_italian_plate
@@ -70,8 +71,9 @@ def recognize():
         #     }), 200
 
         # 6) Entry: car make/model on full frame
-        car_make, car_model, car_conf = detect_car_make_model(image)
-        
+        # car_make, car_model, car_conf = detect_car_make_model(image)  # YOLO disabilitato
+        car_make, car_model, car_conf = detect_car_make_model_anthropic(image)
+
         app.logger.debug("car: make=%s model=%s conf=%s", car_make, car_model, car_conf)
 
         # 7) Entry: OCR on plate crop

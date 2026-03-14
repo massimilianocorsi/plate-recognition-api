@@ -14,3 +14,5 @@ YOLO_PLATE_MODEL = "yolov8n_it_plate.onnx"
 YOLO_CAR_MODEL = "yolov8n_car_model.onnx"
 
 YOLO_CAR_CLASSES = "car_classes.txt"  # path al file con i nomi delle classi
+
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
