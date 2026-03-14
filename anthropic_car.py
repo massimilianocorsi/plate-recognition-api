@@ -2,7 +2,7 @@ import anthropic
 import base64
 import logging
 from PIL import Image
-from config import ANTHROPIC_API_KEY
+from config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def detect_car_make_model_anthropic(image: Image.Image):
     logger.debug("Invio immagine ad Anthropic per riconoscimento auto")
 
     message = _client.messages.create(
-        model="claude-3-5-haiku-20241022",
+        model=ANTHROPIC_MODEL,
         max_tokens=100,
         messages=[
             {
