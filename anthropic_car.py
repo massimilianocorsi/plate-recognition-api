@@ -59,10 +59,12 @@ def detect_car_make_model_anthropic(image: Image.Image):
         result = json.loads(raw_text)
         car_make = result.get("make")
         car_model = result.get("model")
+        car_plate = result.get("plate")
     except json.JSONDecodeError:
         logger.warning("Risposta Anthropic non parsabile come JSON: %s", raw_text)
         car_make = None
         car_model = None
+        car_plate = None
 
-    logger.debug("Anthropic → make=%s model=%s", car_make, car_model)
-    return car_make, car_model, None
+    logger.debug("Anthropic → make=%s model=%s plate=%s", car_make, car_model, car_plate)
+    return car_make, car_model, car_plate, None
